@@ -1,0 +1,69 @@
+# --- Problem setup --- #
+
+# Parameter values
+
+#   want a function getProbOfPersisting
+#   This should repeat out stochastic model n times and use each time to check how many T values the infection persisted for
+def getProbOfPersistingnparrays(R0, numberOfRuns=100,mu = 0.1,popSize = 1000):
+    #   R0 = beta * popSize / mu
+    #   beta = R0 * mu / popSize
+    
+    mu = 0.1 
+    popSize = 1000
+    beta = R0 * mu / popSize
+    persistsForTVecDaysCounter = np.zeros(1000)
+
+    for i in range(popSize):
+        # Set up arrays to record event times, and values of S, I and R after after each event
+        SVec = np.array([])
+        IVec = np.array([])
+        tVec = np.array([]) #   t is in Days
+
+        # Set initial conditions and the initial time
+        S = popSize-1
+        I = 1
+        t = 0
+
+        # Record initial conditions in the S, I, R and t arrays
+        #   I suspect this is the slowest part of the loop
+        #   appending makes a whole new array each time so is likely slow
+        SVec = np.append(SVec, S)
+        IVec = np.append(IVec, I)
+        tVec = np.append(tVec, t)
+        
+        
+        #print(persistsForTVecDaysCounter)
+        # --- While the outbreak is ongoing (I > 0), generate events --- #
+
+        while I > 0 and t < 1000:
+            
+            r1 = np.random.uniform(0, 1, 1)[0]
+            totalRate = beta*I*S + mu*I
+            t = t - (1/totalRate)*np.log(r1)
+            
+            r2 = np.random.uniform(0, 1, 1)
+            #   P(person is infected) = beta*I*S/totalRate
+            if r2 < beta*I*S/totalRate:
+                S = S - 1
+                I = I + 1
+            #   Otherwise someone goes from infected to S again
+            else:
+                I = I - 1
+                S = S + 1
+            #print(SVec)
+            SVec = np.append(SVec, S)
+            IVec = np.append(IVec, I)
+            tVec = np.append(tVec, t)
+            #   Test for persistence:
+            #print("t is ", t)
+            if(I == 0):
+                for i in range(0, round(t)):
+                    #   This could also be made more efficient by doing the loop at the end, allowing us to do multiple in one go
+                    persistsForTVecDaysCounter[i] += 1
+            elif(t == 1000):
+                persistsForTVecDaysCounter += 1
+    #print(persistsForTVecDaysCounter)
+    probPersistsForTDays = persistsForTVecDaysCounter/popSize
+    print(probPersistsForTDays)
+    
+getProbOfPersisting(1.1)
